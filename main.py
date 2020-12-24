@@ -20,11 +20,29 @@ def crawl():
 	stats = Stats()
 	backlog = Backlog('toParse.txt','parsed.txt')
 	stop_event= threading.Event()
+	threads = 25
+	running = []
 	try:
-		for i in range(10):
-			t = threading.Thread(target=linkCrawler, args=(backlog,stats,stop_event))
-			t.daemon = True # die when the main thread dies
-			t.start()
+		if backlog.count() == 0:
+			print("No domains to parse found, starting with opennederland.nl")
+			backlog.append(["opennederland.nl"])
+			sleep(1) # don't know how to wait for backlog to finish
+		
+		
+		while len(running) <= threads:
+			print (len(running))
+			print (threads)
+			if backlog.count() > 0:		
+				print("Starting new thread nr." +str(len(running)+1))
+				t = threading.Thread(target=linkCrawler, args=(backlog,stats,stop_event))
+				t.daemon = True # die when the main thread dies
+				t.start()
+				running.append(t)
+			else:
+				print("No available domains. Waiting...")
+				sleep(1)
+		print ("Threads running: " + str(len(running)+1))
+		
 		while True:
 			stats.printStats()
 			sleep(5)

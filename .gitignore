@@ -132,3 +132,4 @@ dmypy.json
 parsed.txt
 toParse.txt
 *.log
+.DS_Store
