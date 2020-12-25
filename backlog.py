@@ -37,7 +37,6 @@ class Backlog(object):
 					added += 1
 				else:
 					duplicates += 1
-			print (str(added) + " domains added, " + str(duplicates) + " duplicates ignored")
 		except:
 			raise
 		finally:

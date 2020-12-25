@@ -10,14 +10,16 @@ import sys
 import logging
 import socket
 import threading
+from time import sleep
 
 from checker import Checker
 
 class linkCrawler(threading.Thread):
 	
-	def __init__(self, backlog, stats, stop_event):
+	def __init__(self, backlog, stats, collector, stop_event):
 		self.backlog = backlog
 		self.stats = stats
+		self.collector = collector
 		self.isstopped = stop_event
 		self.start()
 		
@@ -25,15 +27,14 @@ class linkCrawler(threading.Thread):
 	# Get all links
 	def start(self):
 		domain = self.backlog.pop()
-		while domain != None:
-			logging.info("Crawling: " + domain)
-			self.analyse(domain)
-			
-			if not self.isstopped.is_set():
-				domain = self.backlog.pop()
+		while not self.isstopped.is_set():
+			if domain == None:
+				sleep(5)
 			else:
-				domain = None
-				print ("Stopping thread..")
+				logging.info("Crawling: " + domain)
+				self.analyse(domain)		
+			domain = self.backlog.pop()
+		print ("Stopping thread..")		
 
 	
 	def getPage(self, url):
@@ -74,6 +75,7 @@ class linkCrawler(threading.Thread):
 				#analyse contents
 				PageChecker = Checker(soup)
 				OSTools = PageChecker.checkAll()
+				self.collector.append(PageChecker.getGenerators())
 			
 				#Next links
 				links = []

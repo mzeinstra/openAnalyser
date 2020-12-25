@@ -5,6 +5,7 @@ class Checker():
 	def __init__(self, soup):
 		self.Scripts = []
 		self.Links = []
+		self.Generators = []
 		self.page = soup
 		
 		
@@ -12,11 +13,19 @@ class Checker():
 		for link in Links:
 			if link.get('src') != None:
 				self.Scripts.append(link.get('src')) 
+		
 		Links = self.page.find_all('link')
 		for link in Links:
 			if link.get('src') != None:
 				self.Links.append(link.get('href'))
+		
+		generators = self.page.find_all('meta',attrs={'name':'generator'})
+		for tag in generators:
+			self.Generators.append(tag['content'])
 		return
+	
+	def getGenerators(self):
+		return self.Generators
 
 	def checkScripts (self, occurances):
 		for link in self.Scripts:
@@ -29,17 +38,44 @@ class Checker():
 			for occurance in occurances:
 				if link.find(occurance) != -1:
 					return True
+					
+	def checkGenerators (self, occurances):
+		for link in self.Generators:
+			for occurance in occurances:
+				if link.find(occurance) != -1:
+					return True
 
-	def checkAll(self):
+	def checkAll(self):	
 		OpenSourceTools = []
+		
+		#CMS
 		if self.checkWordpress():
 			OpenSourceTools.append("Wordpress")
+			# also check for WooCommerce - ecommerce platform
+			if self.checkWooCommerce():
+				OpenSourceTools.append("WooCommerce")
+		if self.checkTYPO3():
+			OpenSourceTools.append("TYPO3")
+		if self.checkPrestaShop():
+			OpenSourceTools.append("PrestaShop")
+		if self.checkDrupal():
+			OpenSourceTools.append("Drupal")
+		if self.checkJoombla():
+			OpenSourceTools.append("Joombla")
+		if self.checkPlone():
+			OpenSourceTools.append("Plone")
+		if self.checkConcrete5():
+			OpenSourceTools.append("Concrete5")
+		
+		#Libraries
 		if self.checkJQuery():
 			OpenSourceTools.append("jQuery")
 		if self.checkVUE():
 			OpenSourceTools.append("VUE.js")
 		if self.checkReact():
 			OpenSourceTools.append("React.js")
+		if self.checkGoogleFonts():
+			OpenSourceTools.append("Google Fonts")
 		return OpenSourceTools
 
 
@@ -47,12 +83,65 @@ class Checker():
 		
 	def checkWordpress(self):
 		occurances = ["wordpress", "wp-admin", "wp-content", "wp-embed","wp-includes", "wp-json"]
+		if self.checkGenerators(occurances):
+			return True
 		if self.checkLinks(occurances):
 			return True
 		if self.checkScripts(occurances):
 			return True
 		return False
 	
+	def checkWooCommerce(self):
+		occurances = ["WooCommerce"]
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+		return False
+	
+	def checkTYPO3(self):
+		occurances = ["TYPO3"]
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+	
+	def checkPrestaShop(self):
+		occurances = ["PrestaShop"]
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+	
+	def checkDrupal(self):
+		occurances = ["Drupal"]
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+	
+	def checkJoombla(self):
+		occurances = ["Joombla"]
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+	
+	def checkPlone(self):
+		occurances = ["Plone"]
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+	
+	def checkPlone(self):
+		occurances = ["concrete5"]
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+	
+	#Libraries
 	def checkJQuery(self):
 		occurances = ["jquery"]	
 		if self.checkLinks(occurances):
@@ -70,5 +159,11 @@ class Checker():
 	def checkReact(self):
 		occurances = ["unpkg.com/react", "react.js"]
 		if self.checkScripts(occurances):
+			return True
+		return False
+	
+	def checkGoogleFonts(self):
+		occurances = ["fonts.googleapis.com/"]
+		if self.checkLinks(occurances):
 			return True
 		return False

@@ -15,33 +15,21 @@ from crawler import linkCrawler
 from checker import Checker
 from stats import Stats
 from backlog import Backlog
+from collector import Collector
 
 def crawl():
 	stats = Stats()
 	backlog = Backlog('toParse.txt','parsed.txt')
+	collector = Collector("collections.json")
 	stop_event= threading.Event()
 	threads = 25
 	running = []
-	try:
-		if backlog.count() == 0:
-			print("No domains to parse found, starting with opennederland.nl")
-			backlog.append(["opennederland.nl"])
-			sleep(1) # don't know how to wait for backlog to finish
-		
-		
-		while len(running) <= threads:
-			print (len(running))
-			print (threads)
-			if backlog.count() > 0:		
-				print("Starting new thread nr." +str(len(running)+1))
-				t = threading.Thread(target=linkCrawler, args=(backlog,stats,stop_event))
-				t.daemon = True # die when the main thread dies
-				t.start()
-				running.append(t)
-			else:
-				print("No available domains. Waiting...")
-				sleep(1)
-		print ("Threads running: " + str(len(running)+1))
+	try:		
+		for x in range(threads):		
+			t = threading.Thread(target=linkCrawler, args=(backlog,stats, collector, stop_event))
+			t.daemon = True # die when the main thread dies
+			t.start()
+			running.append(t)
 		
 		while True:
 			stats.printStats()
@@ -55,6 +43,7 @@ def crawl():
 				t.join()
 		stats.printStats()
 		backlog.safeprogress()
+		collector.safeprogress()
 	except Exception:
 		traceback.print_exc(file=sys.stdout)
 	
