@@ -1,7 +1,5 @@
 import sys, traceback
-from urllib.request import urlopen
-from urllib.parse import urlparse
-import urllib.error
+import urllib3
 from socket import timeout
 import tldextract
 import re
@@ -22,7 +20,7 @@ def crawl():
 	backlog = Backlog('toParse.txt','parsed.txt')
 	collector = Collector("collections.json")
 	stop_event= threading.Event()
-	threads = 25
+	threads = 30
 	running = []
 	try:		
 		for x in range(threads):		

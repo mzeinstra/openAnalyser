@@ -1,5 +1,6 @@
 import threading
 import logging
+import os
 
 class Stats(object):
 	def __init__(self):
@@ -24,8 +25,25 @@ class Stats(object):
 			self.lock.release()
 
 	def getStats(self):
-		return self.stats
+		logging.debug('Waiting for lock')
+		self.lock.acquire()
+		try:
+			logging.debug('Acquired lock')
+			return self.stats
+		except:
+			raise
+		finally:
+			self.lock.release()
 	
 	def printStats(self):
-		for stat in self.stats:
-			print (stat + ": " + str(self.stats[stat]))
+		logging.debug('Waiting for lock')
+		self.lock.acquire()
+		try:
+			logging.debug('Acquired lock')
+			os. system('clear')
+			for stat in self.stats:
+				print (stat + ": " + str(self.stats[stat]))
+		except:
+			raise
+		finally:
+			self.lock.release()

@@ -2,10 +2,11 @@ from bs4 import BeautifulSoup
 import re
 
 class Checker():
-	def __init__(self, soup):
+	def __init__(self, soup, poweredByHeaders):
 		self.Scripts = []
 		self.Links = []
 		self.Generators = []
+		self.PoweredByHeaders = poweredByHeaders
 		self.page = soup
 		
 		
@@ -30,19 +31,25 @@ class Checker():
 	def checkScripts (self, occurances):
 		for link in self.Scripts:
 			for occurance in occurances:
-				if link.find(occurance) != -1:
+				if re.search(occurance, link, re.IGNORECASE):
 					return True
 	
 	def checkLinks (self, occurances):
 		for link in self.Links:
 			for occurance in occurances:
-				if link.find(occurance) != -1:
+				if re.search(occurance, link, re.IGNORECASE):
 					return True
 					
 	def checkGenerators (self, occurances):
 		for link in self.Generators:
 			for occurance in occurances:
-				if link.find(occurance) != -1:
+				if re.search(occurance, link, re.IGNORECASE):
+					return True
+					
+	def checkPoweredByHeader(self, occurances):
+		for link in self.PoweredByHeaders:
+			for occurance in occurances:
+				if re.search(occurance, link, re.IGNORECASE):
 					return True
 
 	def checkAll(self):	
@@ -68,6 +75,8 @@ class Checker():
 			OpenSourceTools.append("Concrete5")
 		
 		#Libraries
+		if self.checkPHP():
+			OpenSourceTools.append("PHP")
 		if self.checkJQuery():
 			OpenSourceTools.append("jQuery")
 		if self.checkVUE():
@@ -134,14 +143,26 @@ class Checker():
 		if self.checkScripts(occurances):
 			return True
 	
-	def checkPlone(self):
+	def checkConcrete5(self):
 		occurances = ["concrete5"]
 		if self.checkGenerators(occurances):
 			return True
 		if self.checkScripts(occurances):
 			return True
 	
+	def checkContao(self):
+		occurances("Contao Open Source CMS")
+		if self.checkGenerators(occurances):
+			return True
+		if self.checkScripts(occurances):
+			return True
+	
 	#Libraries
+	def checkPHP(self):
+		occurances = ["php"]
+		if self.checkPoweredByHeader(occurances):
+			return True
+
 	def checkJQuery(self):
 		occurances = ["jquery"]	
 		if self.checkLinks(occurances):

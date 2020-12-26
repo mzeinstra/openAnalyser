@@ -1,7 +1,6 @@
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
 from urllib.parse import urlparse
-import urllib.error
+from bs4 import BeautifulSoup
+import urllib3
 from socket import timeout
 import tldextract
 import re
@@ -21,6 +20,7 @@ class linkCrawler(threading.Thread):
 		self.stats = stats
 		self.collector = collector
 		self.isstopped = stop_event
+		self.http = urllib3.PoolManager()
 		self.start()
 		
 
@@ -40,8 +40,8 @@ class linkCrawler(threading.Thread):
 	def getPage(self, url):
 		page = None
 		try: 
-			page = urlopen("http://" + url, timeout=3)
-		except urllib.error.URLError as e:
+			page = self.http.request('GET', "http://" + url, timeout=2)
+		except urllib3.exceptions.NewConnectionError as e:
 			logging.info(e.reason)
 		except timeout:
 			logging.info("timeout: ", url)
@@ -53,7 +53,7 @@ class linkCrawler(threading.Thread):
 			logging.info("Failed to process (No UTF-8)" + url)
 			logging.info(*sys.exc_info())
 		except:
-			logging.debug("an error occured")
+			logging.info("an error occured")
 		return page
 	
 	# Get all links
@@ -61,11 +61,13 @@ class linkCrawler(threading.Thread):
 		OSTools = []
 		#START Crawler
 		page = self.getPage(url)
+			
 		links = []
 		if page != None:
+			poweredByHeaders = page.headers.get_all('x-powered-by')
+			self.collector.append('x-powered-by', poweredByHeaders)
 			try:
-				html = page.read().decode("utf-8")
-				soup = BeautifulSoup(html, "html.parser")
+				soup = BeautifulSoup(page.data, "html.parser")
 			except Exception as e:
 				logging.info("Failed to process " + url)
 				soup = None
@@ -73,9 +75,10 @@ class linkCrawler(threading.Thread):
 				logging.info("Failed to process (No UTF-8)" + url)
 			if soup != None:
 				#analyse contents
-				PageChecker = Checker(soup)
+				PageChecker = Checker(soup, poweredByHeaders)
 				OSTools = PageChecker.checkAll()
-				self.collector.append(PageChecker.getGenerators())
+				#Collect Meta Generator tag
+				self.collector.append('generator-tag', PageChecker.getGenerators())
 			
 				#Next links
 				links = []

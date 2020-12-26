@@ -9,16 +9,19 @@ class Collector(object):
 		self.lock = threading.Lock() 
 		self.loadProgess(collectionFile)
 
-	def append(self, dataset):
+	def append(self, source, dataset):
 		logging.debug('Collector waiting for lock')
 		self.lock.acquire()
 		try:
 			logging.debug('Collector acquired lock')
+			if self.collection.get(source) == None:
+				self.collection[source] = {}
+			
 			for key in dataset:
-				if key in self.collection:
-					self.collection[key] += 1
+				if key in self.collection.get(source):
+					self.collection.get(source)[key] += 1
 				else:
-					self.collection[key] = 1
+					self.collection.get(source)[key] = 1
 			
 		except:
 			raise
