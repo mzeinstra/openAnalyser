@@ -10,7 +10,9 @@ import logging
 import socket
 import threading
 from time import sleep
+import json
 
+from collector import Collector
 from checker import Checker
 
 class linkCrawler(threading.Thread):
@@ -56,46 +58,73 @@ class linkCrawler(threading.Thread):
 			logging.info("an error occured")
 		return page
 	
+	def storePage(self, domain, page, headers):
+		locationheaders = 'datastore/headers/' + domain + '.json'
+		locationdata = 'datastore/data/' + domain + '.html'
+
+		if page.status == 200:
+			try:
+				with open(locationdata, 'w+') as outfile:
+					outfile.write(page.data.decode('utf-8'))
+			except OSError as e:
+				raise
+			except:
+				pass
+			try:
+				with open(locationheaders, 'w+') as outfile:
+					json.dump(headers, outfile)
+			except OSError as e:
+				raise
+			except:
+				pass
+	
 	# Get all links
 	def analyse(self, url):
 		OSTools = []
+		siteInfo = {}
 		#START Crawler
 		page = self.getPage(url)
-			
+		
 		links = []
 		if page != None:
-			poweredByHeaders = page.headers.get_all('x-powered-by')
-			self.collector.append('x-powered-by', poweredByHeaders)
+			headers = dict((x, y) for x, y in page.headers.items())
+			siteInfo['headers'] = headers
+			self.storePage(url, page, headers)	
 			try:
 				soup = BeautifulSoup(page.data, "html.parser")
+				
 			except Exception as e:
 				logging.info("Failed to process " + url)
 				soup = None
 			except UnicodeDecodeError as e:
 				logging.info("Failed to process (No UTF-8)" + url)
+			
 			if soup != None:
 				#analyse contents
-				PageChecker = Checker(soup, poweredByHeaders)
+				PageChecker = Checker(soup, siteInfo)
 				OSTools = PageChecker.checkAll()
-				#Collect Meta Generator tag
-				self.collector.append('generator-tag', PageChecker.getGenerators())
 			
 				#Next links
 				links = []
 				for link in soup.findAll('a', attrs={'href': re.compile("^http.://")}):
 					#store links for next crawl
 					link = link.get('href')
-					if tldextract.extract(link).suffix == "nl":
-						links.append(urlparse(link).netloc)
+					if link not in links:
+						if tldextract.extract(link).suffix == "nl": 
+							links.append(urlparse(link).netloc)
 			
 				for link in soup.findAll('img', attrs={'href': re.compile("^http.://")}):
 					#store links for next crawl
 					link = link.get('href')
-					if tldextract.extract(link).suffix == "nl":
-						links.append(urlparse(link).netloc)
+					if link not in links:
+						if tldextract.extract(link).suffix == "nl":					
+							links.append(urlparse(link).netloc)
 		
 		self.backlog.append(links)
+		siteInfo['hrefs'] = links
 		self.stats.update(OSTools)
+		siteInfo['OSTools'] = OSTools
+		self.collector.append(url, siteInfo) 
 		return
 
 	def getCount(self):
@@ -112,4 +141,3 @@ class linkCrawler(threading.Thread):
 	
 	def getParsed(self):
 		return self.parsed
-	

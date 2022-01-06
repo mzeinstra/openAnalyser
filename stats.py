@@ -40,7 +40,7 @@ class Stats(object):
 		self.lock.acquire()
 		try:
 			logging.debug('Acquired lock')
-			os. system('clear')
+			#os. system('clear')
 			for stat in self.stats:
 				print (stat + ": " + str(self.stats[stat]))
 		except:

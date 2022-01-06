@@ -20,7 +20,7 @@ def crawl():
 	backlog = Backlog('toParse.txt','parsed.txt')
 	collector = Collector("collections.json")
 	stop_event= threading.Event()
-	threads = 30
+	threads = 20
 	running = []
 	try:		
 		for x in range(threads):		
@@ -31,6 +31,7 @@ def crawl():
 		
 		while True:
 			stats.printStats()
+			collector.safeprogress
 			sleep(5)
 	except KeyboardInterrupt:
 		print ("Shutdown requested...exiting")
@@ -56,23 +57,5 @@ if __name__ == "__main__":
 		main()
 	finally:
 		logging.info('Finished')
-
-
-
-def getPage(link):
-	page = ""
-	try: page = urlopen("http://" + link)
-	except urllib.error.URLError as e:
-		logging.debug(e.reason)
-	except timeout:
-		logging.info("timeout: ", link)
-	except KeyboardInterrupt:
-		raise
-	return page
-
-def analyse(page):
-	PageChecker = Checker(page)
-	print(PageChecker.checkAll())
-
 
         

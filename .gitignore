@@ -134,3 +134,5 @@ toParse.txt
 *.log
 .DS_Store
 collections.json
+*.html
+*.json

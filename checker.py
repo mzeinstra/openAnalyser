@@ -2,11 +2,11 @@ from bs4 import BeautifulSoup
 import re
 
 class Checker():
-	def __init__(self, soup, poweredByHeaders):
+	def __init__(self, soup, SiteInfo):
 		self.Scripts = []
 		self.Links = []
 		self.Generators = []
-		self.PoweredByHeaders = poweredByHeaders
+		self.SiteInfo = SiteInfo
 		self.page = soup
 		
 		
@@ -14,15 +14,18 @@ class Checker():
 		for link in Links:
 			if link.get('src') != None:
 				self.Scripts.append(link.get('src')) 
+		self.SiteInfo['scripts'] = self.Scripts
 		
 		Links = self.page.find_all('link')
 		for link in Links:
 			if link.get('src') != None:
 				self.Links.append(link.get('href'))
+		self.SiteInfo['links'] = self.Links
 		
 		generators = self.page.find_all('meta',attrs={'name':'generator'})
 		for tag in generators:
 			self.Generators.append(tag['content'])
+		self.SiteInfo['generators'] = self.Generators
 		return
 	
 	def getGenerators(self):
@@ -35,10 +38,12 @@ class Checker():
 					return True
 	
 	def checkLinks (self, occurances):
-		for link in self.Links:
-			for occurance in occurances:
-				if re.search(occurance, link, re.IGNORECASE):
-					return True
+		if len(occurances) > 0 and len(self.Links) > 0:
+			for link in self.Links:
+				for occurance in occurances:
+					if re.search(occurance, link, re.IGNORECASE):
+						return True
+		return False
 					
 	def checkGenerators (self, occurances):
 		for link in self.Generators:
@@ -47,10 +52,15 @@ class Checker():
 					return True
 					
 	def checkPoweredByHeader(self, occurances):
-		for link in self.PoweredByHeaders:
-			for occurance in occurances:
-				if re.search(occurance, link, re.IGNORECASE):
+		if "X-Powered-By" in self.SiteInfo:
+			if isinstance(self.SiteInfo['X-Powered-By'], str):
+				if self.SiteInfo['X-Powered-By'] in occurances:
 					return True
+			elif isinstance(self.SiteInfo['X-Powered-By'], list):
+				for link in self.SiteInfo['X-Powered-By']:
+					for occurance in occurances:
+						if re.search(occurance, link, re.IGNORECASE):
+							return True
 
 	def checkAll(self):	
 		OpenSourceTools = []
@@ -75,8 +85,6 @@ class Checker():
 			OpenSourceTools.append("Concrete5")
 		
 		#Libraries
-		if self.checkPHP():
-			OpenSourceTools.append("PHP")
 		if self.checkJQuery():
 			OpenSourceTools.append("jQuery")
 		if self.checkVUE():
@@ -85,6 +93,22 @@ class Checker():
 			OpenSourceTools.append("React.js")
 		if self.checkGoogleFonts():
 			OpenSourceTools.append("Google Fonts")
+		#Keycloak
+		#kc_session in setcookie
+		
+		#OS
+		
+		#Languages
+		#ASP.net (asp.net in set-cookie headers names)
+		
+		if self.checkPHP():
+			OpenSourceTools.append("PHP")
+		#Laravel PHP framework
+		#laravel is in setcookie
+		
+		
+		
+		#return found
 		return OpenSourceTools
 
 
@@ -149,6 +173,7 @@ class Checker():
 			return True
 		if self.checkScripts(occurances):
 			return True
+		#concrete5 is also a part of set-cookie header name
 	
 	def checkContao(self):
 		occurances("Contao Open Source CMS")
@@ -162,6 +187,7 @@ class Checker():
 		occurances = ["php"]
 		if self.checkPoweredByHeader(occurances):
 			return True
+		# Add check if set-cookie header contains phpsessid
 
 	def checkJQuery(self):
 		occurances = ["jquery"]	
@@ -184,7 +210,7 @@ class Checker():
 		return False
 	
 	def checkGoogleFonts(self):
-		occurances = ["fonts.googleapis.com/"]
-		if self.checkLinks(occurances):
+		occurances = ["fonts.googleapis.com/","https://ajax.googleapis.com/ajax/libs/webfont/"]
+		if self.checkScripts(occurances):
 			return True
 		return False
